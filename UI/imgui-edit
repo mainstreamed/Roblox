@@ -1379,7 +1379,7 @@ local settings = {
     end,
 }
 
-_G.library = {
+library = {
     new = function(options)
         local cache = { }
         local self = {
@@ -2519,4 +2519,4 @@ do -- window history zindex
     end)
 end
 
-return _G.library
+return library
