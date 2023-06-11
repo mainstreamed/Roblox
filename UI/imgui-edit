@@ -1266,7 +1266,7 @@ end
 local dragger = {} do
     local draggerCache = { }
 
-    function dragger.new(frame)
+    function dragger.new(frame, tab)
         local held = false
         frame.Active = true
 
@@ -1284,7 +1284,11 @@ local dragger = {} do
                     local objectPosition = Vector2.new(getMouse().X - frame.AbsolutePosition.X, getMouse().Y - frame.AbsolutePosition.Y)
                     while mouse.held do
                         pcall(function()
+                            local pos = UDim2.new(0, getMouse().X - objectPosition.X + (frame.Size.X.Offset * frame.AnchorPoint.X), 0, getMouse().Y - objectPosition.Y + (frame.Size.Y.Offset * frame.AnchorPoint.Y))
                             resize(frame, { Position = UDim2.new(0, getMouse().X - objectPosition.X + (frame.Size.X.Offset * frame.AnchorPoint.X), 0, getMouse().Y - objectPosition.Y + (frame.Size.Y.Offset * frame.AnchorPoint.Y)) }, 0.1)
+                            if (tab) then
+                                tab.pos = pos
+                            end
                         end)
                         RunService.Heartbeat:Wait()
                     end
@@ -1386,7 +1390,7 @@ library = {
             isopen = true,
         }
         local ViewportSize = workspace.CurrentCamera.ViewportSize
-
+        
         options = settings.new({
             text = "New Window",
             size = Vector2.new(350, 450),
@@ -1419,7 +1423,8 @@ library = {
             end
         end)
 
-        dragger.new(main)
+        dragger.new(main, self)
+        
         main:FindFirstChild("Title").Text = options.text
         main.ImageColor3 = options.color
         main:FindFirstChild("Frame").BackgroundColor3 = options.color
@@ -2018,6 +2023,7 @@ library = {
                         dropdownWindow.Visible = self.visible
                         if self.visible then
                             dropdownWindow.Position = UDim2.new(0, dropdownButton.AbsolutePosition.X + dropdownButton.AbsoluteSize.X, 0, dropdownButton.AbsolutePosition.Y)
+                            self.pos = main.Position
                             self.open()
                             setTopMost(dropdownWindow)
                         end
@@ -2463,7 +2469,9 @@ library = {
 
         function self.setPosition(pos)
             main.Position = pos
+            self.pos = main.Position
         end
+        self.pos = main.Position
 
         do -- Start closed, then open
             local old = options.animation
@@ -2471,7 +2479,6 @@ library = {
             self.close()
             options.animation = old
         end
-
         return self
     end,
 }
