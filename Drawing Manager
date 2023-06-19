@@ -195,6 +195,7 @@ function drawings:CreateImage(properties, tables)
     drawing.Size = properties.Size or vector2_new(10, 10)
     drawing.Position = properties.Position or screen_center
     drawing.Rounding = properties.Rounding or 1
+    drawing.ZIndex = properties.ZIndex or 0
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
