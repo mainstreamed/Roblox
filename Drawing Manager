@@ -32,21 +32,35 @@ local viewportsize = camera.ViewportSize
 
 local screen_center = vector2_new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
 
+local function roundVector2(vector2)
+    return vector2_new(math_round(vector2.X), math_round(vector2.Y))
+end
+
 function drawings:CreateSquare(properties, tables)
     properties = properties or {}
     tables = tables or {}
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        Size = properties.Size or vector2_new(100, 100),
+        Position = properties.Position or screen_center,
+        Filled = properties.Filled or false,
+        ZIndex = properties.ZIndex or 0,
+    }
     local drawing = drawing_new('Square')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Thickness = properties.Thickness or 1
-    drawing.Size = properties.Size or vector2_new(100, 100)
-    drawing.Position = properties.Position or screen_center
-    drawing.Filled = properties.Filled or false
-    drawing.ZIndex = properties.ZIndex or 0
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Thickness = properties.Thickness
+    drawing.Size = roundVector2(properties.Size)
+    drawing.Position = roundVector2(properties.Position)
+    drawing.Filled = properties.Filled
+    drawing.ZIndex = properties.ZIndex
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
@@ -62,16 +76,28 @@ function drawings:CreateQuad(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        Filled = properties.Filled or false,
+        ZIndex = properties.ZIndex or 0,
+        PointA = properties.PointA or screen_center,
+        PointB = properties.PointB or screen_center,
+        PointC = properties.PointC or screen_center,
+        PointD = properties.PointD or screen_center,
+    }
     local drawing = drawing_new('Quad')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Thickness = properties.Thickness or 1
-    drawing.Filled = properties.Filled or false
-    drawing.PointA = properties.PointA or screen_center
-    drawing.PointB = properties.PointB or screen_center
-    drawing.PointC = properties.PointC or screen_center
-    drawing.PointD = properties.PointD or screen_center
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Thickness = properties.Thickness
+    drawing.Filled = properties.Filled
+    drawing.PointA = roundVector2(properties.PointA)
+    drawing.PointB = roundVector2(properties.PointB)
+    drawing.PointC = roundVector2(properties.PointC)
+    drawing.PointD = roundVector2(properties.PointD)
     drawing.ZIndex = properties.ZIndex or 0
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
@@ -88,17 +114,30 @@ function drawings:CreateText(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        Size = properties.Size or 13,
+        OutlineColor = properties.OutlineColor or color3_fromrgb(1, 1, 1),
+        Position = properties.Position or screen_center,
+        Outline = properties.Outline or true,
+        ZIndex = properties.ZIndex or 0,
+        Font = properties.Font or 2,
+        Text = properties.Text or 'sample text',
+    }
     local drawing = drawing_new('Text')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Font = properties.Font or 2
-    drawing.Position = properties.Position or screen_center
-    drawing.OutlineColor = properties.OutlineColor or color3_fromrgb(1, 1, 1)
-    drawing.Outline = properties.Outline or true
-    drawing.Center = properties.Center or false
-    drawing.Size = properties.Size or 13
-    drawing.Text = properties.Text or 'sample text'
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Font = properties.Font
+    drawing.Position = roundVector2(properties.Position)
+    drawing.OutlineColor = properties.OutlineColor
+    drawing.Outline = properties.Outline
+    drawing.Center = properties.Center
+    drawing.Size = properties.Size
+    drawing.Text = properties.Text
     drawing.ZIndex = properties.ZIndex or 0
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
@@ -115,16 +154,27 @@ function drawings:CreateCircle(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        Position = properties.Position or screen_center,
+        Filled = properties.Filled or false,
+        ZIndex = properties.ZIndex or 0,
+        NumSides = properties.NumSides or 100,
+        Radius = properties.Radius or 150,
+    }
     local drawing = drawing_new('Circle')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Thickness = properties.Thickness or 1
-    drawing.NumSides = properties.NumSides or 100
-    drawing.Radius = properties.Radius or 150
-    drawing.Filled = properties.Filled or false
-    drawing.Position = properties.Position or screen_center
-    drawing.ZIndex = properties.ZIndex or 0
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Thickness = properties.Thickness
+    drawing.NumSides = properties.NumSides
+    drawing.Radius = properties.Radius
+    drawing.Filled = properties.Filled
+    drawing.Position = roundVector2(properties.Position)
+    drawing.ZIndex = properties.ZIndex
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
@@ -140,14 +190,23 @@ function drawings:CreateLine(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        ZIndex = properties.ZIndex or 0,
+        From = properties.From or screen_center,
+        To = properties.To or screen_center,
+    }
     local drawing = drawing_new('Line')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Thickness = properties.Thickness or 1
-    drawing.From = properties.From or screen_center
-    drawing.To = properties.To or screen_center
-    drawing.ZIndex = properties.ZIndex or 0
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Thickness = properties.Thickness
+    drawing.From = roundVector2(properties.From)
+    drawing.To = roundVector2(properties.To)
+    drawing.ZIndex = properties.ZIndex
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
@@ -163,16 +222,27 @@ function drawings:CreateTriangle(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Color = properties.Color or color3_fromrgb(255, 255, 255),
+        Thickness = properties.Thickness or 1,
+        Filled = properties.Filled or false,
+        ZIndex = properties.ZIndex or 0,
+        PointA = properties.PointA or screen_center,
+        PointB = properties.PointB or screen_center,
+        PointC = properties.PointC or screen_center,
+    }
     local drawing = drawing_new('Triangle')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Color = properties.Color or color3_fromrgb(255, 255, 255)
-    drawing.Thickness = properties.Thickness or 1
-    drawing.PointA = properties.PointA or screen_center
-    drawing.PointB = properties.PointB or screen_center
-    drawing.PointC = properties.PointC or screen_center
-    drawing.Filled = properties.Filled or false
-    drawing.ZIndex = properties.ZIndex or 0
+    drawing.Transparency = properties.Transparency
+    drawing.Color = properties.Color
+    drawing.Thickness = properties.Thickness
+    drawing.PointA = roundVector2(properties.PointA)
+    drawing.PointB = roundVector2(properties.PointB)
+    drawing.PointC = roundVector2(properties.PointC)
+    drawing.Filled = properties.Filled
+    drawing.ZIndex = properties.ZIndex
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
@@ -188,14 +258,23 @@ function drawings:CreateImage(properties, tables)
     if (properties.Visible == nil) then
         properties.Visible = true
     end
+    properties = {
+        Visible = properties.Visible, 
+        Transparency = properties.Transparency or 1,
+        Data = properties.Data or ''
+        ZIndex = properties.ZIndex or 0,
+        Position = properties.Position or screen_center,
+        Size = properties.Size or vector2_new(10, 10),
+        Rounding = properties.Rounding or 1,
+    }
     local drawing = drawing_new('Image')
     drawing.Visible = properties.Visible
-    drawing.Transparency = properties.Transparency or 1
-    drawing.Data = properties.Data or ''
-    drawing.Size = properties.Size or vector2_new(10, 10)
-    drawing.Position = properties.Position or screen_center
-    drawing.Rounding = properties.Rounding or 1
-    drawing.ZIndex = properties.ZIndex or 0
+    drawing.Transparency = properties.Transparency
+    drawing.Data = properties.Data
+    drawing.Size = roundVector2(properties.Size)
+    drawing.Position = roundVector2(properties.Position)
+    drawing.Rounding = properties.Rounding
+    drawing.ZIndex = properties.ZIndex
     table.insert(drawings, drawing)
     for _, _table in pairs(tables) do
         if typeof(_table) == 'table' then
