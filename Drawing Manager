@@ -261,7 +261,7 @@ function drawings:CreateImage(properties, tables)
     properties = {
         Visible = properties.Visible, 
         Transparency = properties.Transparency or 1,
-        Data = properties.Data or ''
+        Data = properties.Data or '',
         ZIndex = properties.ZIndex or 0,
         Position = properties.Position or screen_center,
         Size = properties.Size or vector2_new(10, 10),
