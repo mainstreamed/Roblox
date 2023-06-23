@@ -23,6 +23,7 @@ local color3_new, color3_fromrgb = Color3.new, Color3.fromRGB
 local vector3_new, vector2_new, cframe_new = Vector3.new, Vector2.new, CFrame.new
 local math_huge, math_floor, math_ceil, math_max, math_min, math_random, math_tan, math_rad = math.huge, math.floor, math.ceil, math.max, math.min, math.random, math.tan, math.rad
 local ray_new = Ray.new
+local math_round = math.round
 
 --//Other Variables
 local camera = Workspace.CurrentCamera
@@ -126,6 +127,7 @@ function drawings:CreateText(properties, tables)
         ZIndex = properties.ZIndex or 0,
         Font = properties.Font or 2,
         Text = properties.Text or 'sample text',
+        Center = properties.Center or false,
     }
     local drawing = drawing_new('Text')
     drawing.Visible = properties.Visible
