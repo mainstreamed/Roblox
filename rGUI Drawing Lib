@@ -1,0 +1,1016 @@
+--[[
+    [!] Please keep in mind not everything is accurate, this was made to make scripts using the drawing library compatable with electron
+    [!] This has only been tested within roblox studio, this may not work with real electron
+    Bugs:
+        [-] Filled property doesnt work on Quads and Triangles
+        [-] Lines will sometimes appear blurry when diagonal
+        [-] Text fonts are not the same
+]]
+
+local type = typeof;
+local tos = tostring;
+local math_abs = math.abs;
+local math_atan2 = math.atan2;
+local pi = math.pi;
+
+local instance_new = Instance.new;
+local color3_new = Color3.new;
+local vector2_new = Vector2.new;
+local udim2_fromoffset = UDim2.fromOffset;
+local udim2_fromscale = UDim2.fromScale;
+local udim2_new = UDim2.new;
+local udim_new = UDim.new;
+local udim2 = function(x, y)
+	if (type(x) ~= 'number' and pcall(function() local a = x.X; local b = x.Y end)) then
+		return udim2_new(0, x.X, 0, x.Y);
+	end
+	return udim2_new(0, x, 0, y);
+end
+
+local camera = workspace.CurrentCamera
+local players = game:GetService('Players')
+local localPlayer = players.LocalPlayer
+local coregui = game:GetService('CoreGui');
+
+local hui = instance_new('ScreenGui', coregui) -- probs not the safest, but oh well
+hui.Name = 'ms_DrawingLibrary'
+hui.IgnoreGuiInset = true
+
+local function createInstance(_type, settings, parent)
+	parent = parent or hui;
+	_type = _type or 'Frame'
+	assert(typeof(_type) == 'string', 'string expected arg #1')
+	local square = instance_new(_type, parent);
+	for index, value in settings do
+		square[index] = value;
+	end
+	return square;
+end
+local function convertVector2(vector2)
+	return udim2_new(0, vector2.X, 0, vector2.Y)
+end
+local function convertTransparency(transparency)
+	return 1 - transparency
+end
+local function propertyError(index, object)
+    error(tos(index)..' is not a valid member of '..object)
+end
+local function propertyTypeError(value, index, expected)
+    local _type = type(value)
+    assert(_type == expected, 'Unable to assign property '..index..'. '..expected..' expected, got '..tos(_type))
+end
+
+getgenv().Drawing = {}
+local function CreateSquare()
+    local active = true;
+	local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+			Thickness = 1,
+			Size = vector2_new(100, 100),
+			Position = vector2_new(0, 0),
+			Filled = true,
+		},
+	}
+
+	local function changeProperty(index, value)
+		for _, instance in GUI do
+			if (type(instance) ~= 'table') then
+				instance[index] = value;
+			end
+		end
+	end
+	
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+			    changeProperty('Visible', boolean)
+		    end,
+        },
+		Transparency = {
+            type = 'number',
+            func = function(number)
+                changeProperty('BackgroundTransparency', convertTransparency(number))
+            end,
+        },
+		Color = {
+            type = 'Color3',
+            func = function(color)
+                changeProperty('BackgroundColor3', color)
+            end,
+        },
+		ZIndex = {
+            type = 'number',
+            func = function(number)
+			    changeProperty('ZIndex', number)
+		    end,
+        },
+		Thickness = {
+            type = 'number',
+            func = function(number)
+                local x, y, to = GUI.settings.Size.X, GUI.settings.Size.Y, number - 1
+                GUI.right.Size = udim2(number, y + to)
+                GUI.top.Size = udim2(x, number)
+                GUI.bottom.Size = udim2(x + to, number)
+                if (GUI.settings.Filled) then
+                    GUI.left.Size = udim2(GUI.settings.Size)
+                else
+                    GUI.left.Size = udim2(number, y)
+                end
+                change.Position(GUI.settings.Position)
+            end,
+        },
+		Size = {
+            type = 'Vector2',
+            func = function(vector2)
+                local thickness = GUI.settings.Thickness
+                GUI.right.Size = udim2(thickness, vector2.Y)
+                GUI.top.Size = udim2(vector2.X, thickness)
+                GUI.bottom.Size = udim2(vector2.X, thickness)
+                if (GUI.settings.Filled) then
+                    GUI.left.Size = udim2(GUI.settings.Size)
+                else
+                    GUI.left.Size = udim2(thickness, vector2.Y + thickness-1)
+                end
+                change.Position(GUI.settings.Position)
+            end,
+        },
+		Position = {
+            type = 'Vector2',
+            func = function(position)
+                local thickness, size = GUI.settings.Thickness, GUI.settings.Size
+                GUI.left.Position = convertVector2(position)
+                GUI.top.Position = convertVector2(position)
+                GUI.bottom.Position = convertVector2(position + vector2_new(0, size.Y - thickness))
+                GUI.right.Position = convertVector2(position + vector2_new(size.X - thickness, 0))
+            end,
+        },
+		Filled = {
+            type = 'boolean',
+            func = function(boolean)
+                if (boolean) then
+                    GUI.left.Size = udim2(GUI.settings.Size)
+                else
+                    GUI.left.Size = udim2(GUI.settings.Thickness, GUI.settings.Size.Y)
+                end
+            end,
+        },
+	}
+	GUI.right = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(1, 100), ZIndex = 0, BorderSizePixel = 0})
+	GUI.left = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(1, 100), ZIndex = 0, BorderSizePixel = 0})
+	GUI.top = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(100, 1), ZIndex = 0, BorderSizePixel = 0})
+	GUI.bottom = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(100, 1), ZIndex = 0, BorderSizePixel = 0})
+	change.Position(GUI.settings.Position)
+
+	local remove = function()
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed');
+	end
+	local index = function(table, index)
+		if (GUI.settings[index]) then
+			return GUI.settings[index];
+        elseif (index == 'Remove' or index == 'Destroy') then
+            return remove;
+		end
+        error(tos(index)..' is not a valid member of Square')
+	end
+	local newindex = function(table, index, value)
+        local values = change[index]
+		if (values) then
+            propertyTypeError(value, index, values.type)
+            GUI.settings[index] = value
+			values.func(value)
+            return
+		end
+        propertyError(index, 'Square')
+	end
+
+
+	local square = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+
+	return square;
+end
+local function CreateCircle()
+    local active = true;
+	local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+			Thickness = 1,
+            Radius = 20,
+            Position = vector2_new(0, 0),
+            Filled = false,			
+		},
+	}
+	
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func =  function(boolean)
+                GUI.frame.Visible = boolean;
+            end,
+        },
+		Transparency = {
+            type = 'number',
+            func = function(number)
+                if (GUI.settings.Filled) then
+                    GUI.frame.Transparency = convertTransparency(number);
+                end
+                GUI.uistroke.Transparency = convertTransparency(number);
+            end,
+        },
+		Color = {
+            type = 'Color3',
+            func = function(color)
+                GUI.frame.BackgroundColor3 = color;
+                GUI.uistroke.Color = color;
+            end,
+        },
+		ZIndex = {
+            type = 'number',
+            func = function(number)
+                GUI.frame.ZIndex = number;
+            end,
+        },
+		Thickness = {
+            type = 'number',
+            func = function(number)
+                GUI.uistroke.Thickness = number;
+            end,
+        },
+        Radius = {
+            type = 'number',
+            func = function(number)
+                GUI.frame.Size = udim2(number, number);
+            end,
+        },
+        Position = {
+            type = 'Vector2',
+            func = function(vector2)
+                GUI.frame.Position = convertVector2(vector2);
+            end,
+        },
+        Filled = {
+            type = 'boolean',
+            func = function(boolean)
+                if (boolean) then
+                    GUI.frame.Transparency = convertTransparency(GUI.settings.Transparency);
+                else
+                    GUI.frame.Transparency = 1;
+                end
+            end,
+        }
+	}
+
+	GUI.frame = createInstance('Frame', {Visible = false, BackgroundTransparency = 1, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(20, 20), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5), BorderSizePixel = 0})
+    GUI.uicorner = createInstance('UICorner', {CornerRadius = udim_new(0.5, 0)}, GUI.frame)
+    GUI.uistroke = createInstance('UIStroke', {Color = color3_new(0, 0, 0), Thickness = 1}, GUI.frame)
+	change.Position(GUI.settings.Position)
+
+	local remove = function()
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed');
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Circle')
+        end
+        error('Drawing is destroyed');
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index]
+            if (values) then
+                propertyTypeError(value, index, values.type)
+                GUI.settings[index] = value
+                values.func(value)
+                return
+            end
+            propertyError(index, 'Circle')
+        end
+        error('Drawing is destroyed');
+	end
+
+	local circle = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+
+	circle.Remove = function(drawing)
+		if (drawing == circle) then
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+        end
+	end
+    line.Destroy = line.Remove;
+
+	return circle;
+end
+local function CreateLine()
+    local active = true;
+	local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+			To = vector2_new(0, 0),
+            From = vector2_new(0, 0),
+            Thickness = 1,	
+		},
+	}
+
+    local function ChangePosition()
+        local to, from = GUI.settings.To, GUI.settings.From
+        GUI.frame.Size = udim2((to - from).Magnitude, GUI.settings.Thickness)
+        GUI.frame.Position = udim2((from.X + to.X) / 2, (from.Y + to.Y) / 2)
+        GUI.frame.Rotation = math_atan2(to.Y - from.Y, to.X - from.X) * (180 / pi)
+    end
+
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+                GUI.frame.Visible = boolean;
+            end,
+        },
+		Transparency = {
+            type = 'number',
+            func = function(number)
+                GUI.frame.Transparency = convertTransparency(number);
+            end,
+        },
+		Color = {
+            type = 'Color3',
+            func = function(color)
+                GUI.frame.BackgroundColor3 = color;
+            end,
+        },
+		ZIndex = {
+            type = 'number',
+            func = function(number)
+                GUI.frame.ZIndex = number;
+            end,
+        },
+        To = {
+            type = 'Vector2',
+            func = ChangePosition,
+        },
+        From = {
+            type = 'Vector2',
+            func = ChangePosition,
+        },
+        Thickness = {
+            type = 'number',
+            func = function(number)
+                GUI.frame.Size = udim2(GUI.frame.Size.Height, number)
+            end,
+        }
+	}
+
+	GUI.frame = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+
+	local remove = function(drawing, ...)
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed');
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Line')
+        end
+        error('Drawing is destroyed');
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index]
+            if (values) then
+                propertyTypeError(value, index, values.type)
+                GUI.settings[index] = value
+                values.func(value)
+                return
+            end
+            propertyError(index, 'Line')
+        end
+        error('Drawing is destroyed');
+	end
+
+	local line = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+
+	return line;
+end
+local function CreateQuad()
+    local active = true;
+    local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+            Thickness = 1,
+            PointA = vector2_new(0, 0),
+            PointB = vector2_new(0, 0),
+            PointC = vector2_new(0, 0),
+            PointD = vector2_new(0, 0),
+            Filled = false,
+		},
+	}
+
+    local function changeProperty(index, value)
+		for _, instance in GUI do
+			if (type(instance) ~= 'table') then
+				instance[index] = value;
+			end
+		end
+	end
+    local function setFrame(frame, to, from, thickness)
+        frame.Size = udim2((to - from).Magnitude + thickness * 2, thickness)
+        frame.Position = udim2((from.X + to.X) / 2, (from.Y + to.Y) / 2)
+        frame.Rotation = math_atan2(to.Y - from.Y, to.X - from.X) * (180 / pi)
+    end
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+                changeProperty('Visible', boolean)
+            end,
+        },
+		Transparency = {
+            type = 'number',
+            func = function(number)
+                changeProperty('BackgroundTransparency', convertTransparency(number))
+            end,
+        },
+		Color = {
+            type = 'Color3',
+            func = function(color)
+                changeProperty('BackgroundTransparency', convertTransparency(number))
+            end,
+        },
+		ZIndex = {
+            type = 'number',
+            func = function(number)
+                changeProperty('ZIndex', number)
+            end,
+        },
+        Thickness = {
+            type = 'number',
+            func = function(number)
+                changeProperty('Thickness', number)
+            end,
+        },
+        PointA = {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.a2b_right, GUI.settings.PointB, vector2, GUI.settings.Thickness)
+                setFrame(GUI.d2a_bottom, vector2, GUI.settings.PointD, GUI.settings.Thickness)
+            end,
+        },
+        PointB = {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.b2c_top, GUI.settings.PointC, vector2, GUI.settings.Thickness)
+                setFrame(GUI.a2b_right, vector2, GUI.settings.PointA, GUI.settings.Thickness)
+            end,
+        },
+        PointC = {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.c2d_left, GUI.settings.PointD, vector2, GUI.settings.Thickness)
+                setFrame(GUI.b2c_top, vector2, GUI.settings.PointB, GUI.settings.Thickness)
+            end,
+        },
+        PointD = {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.d2a_bottom, GUI.settings.PointA, vector2, GUI.settings.Thickness)
+                setFrame(GUI.c2d_left, vector2, GUI.settings.PointC, GUI.settings.Thickness)
+            end,
+        },
+        Filled = {
+            type = 'number',
+            func = function(number)
+                changeProperty('Thickness', number)
+            end,
+        },
+	}
+
+	GUI.a2b_right = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+    GUI.b2c_top = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+    GUI.c2d_left = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+    GUI.d2a_bottom = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+
+	local remove = function()
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy();
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed');
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Quad')
+        end
+        error('Drawing is destroyed');
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index]
+            if (values) then
+                propertyTypeError(value, index, values.type)
+                GUI.settings[index] = value
+                values.func(value)
+                return
+            end
+            propertyError(index, 'Quad')
+        end
+        error('Drawing is destroyed');
+	end
+
+	local quad = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+
+	return quad;
+end
+local function CreateTriangle()
+    local active = true;
+    local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+            Thickness = 1,
+            PointA = vector2_new(0, 0),
+            PointB = vector2_new(0, 0),
+            PointC = vector2_new(0, 0),
+            Filled = false,
+		},
+	}
+
+    local function changeProperty(index, value)
+		for _, instance in GUI do
+			if (type(instance) ~= 'table') then
+				instance[index] = value;
+			end
+		end
+	end
+    local function setFrame(frame, to, from, thickness)
+        frame.Size = udim2((to - from).Magnitude + thickness * 2, thickness)
+        frame.Position = udim2((from.X + to.X) / 2, (from.Y + to.Y) / 2)
+        frame.Rotation = math_atan2(to.Y - from.Y, to.X - from.X) * (180 / pi)
+    end
+
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+                changeProperty('Visible', boolean)
+            end,
+        },
+		Transparency =  {
+            type = 'number',
+            func = function(number)
+                changeProperty('BackgroundTransparency', convertTransparency(number))
+            end,
+        },
+		Color =  {
+            type = 'Color3',
+            func = function(color)
+                changeProperty('BackgroundTransparency', convertTransparency(number))
+            end,
+        },
+		ZIndex =  {
+            type = 'number',
+            func = function(number)
+                changeProperty('ZIndex', number)
+            end,
+        },
+        Thickness =  {
+            type = 'number',
+            func = function(number)
+                changeProperty('Thickness', number)
+            end,
+        },
+        PointA =  {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.a2b_right, GUI.settings.PointB, vector2, GUI.settings.Thickness)
+                setFrame(GUI.c2a_left, vector2, GUI.settings.PointC, GUI.settings.Thickness)
+            end,
+        },
+        PointB =  {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.b2c_top, GUI.settings.PointC, vector2, GUI.settings.Thickness)
+                setFrame(GUI.a2b_right, vector2, GUI.settings.PointA, GUI.settings.Thickness)
+            end,
+        },
+        PointC =  {
+            type = 'Vector2',
+            func = function(vector2)
+                setFrame(GUI.c2a_left, GUI.settings.PointA, vector2, GUI.settings.Thickness)
+                setFrame(GUI.b2c_top, vector2, GUI.settings.PointB, GUI.settings.Thickness)
+            end,
+        },
+        Filled =  {
+            type = 'number',
+            func = function(number)
+                changeProperty('Thickness', number)
+            end,
+        },
+	}
+
+	GUI.a2b_right = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+    GUI.b2c_top = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+    GUI.c2a_left = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), BorderSizePixel = 0, Size = udim2(1, 0), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5)})
+
+	local remove = function(drawing, ...)
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed')
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Triangle');
+        end
+        error('Drawing is destroyed')
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index]
+            if (values) then
+                propertyTypeError(value, index, values.type)
+                GUI.settings[index] = value
+                values.func(value)
+                return
+            end
+            propertyError(index, 'Triangle');
+        end
+        error('Drawing is destroyed')
+	end
+
+	local triangle = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+
+	return triangle;
+end
+local function CreateText()
+    local active = true;
+    local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+            Text = 'Text',
+            Size = 18,
+            Center = false,
+            Outline = false,
+            OutlineColor = color3_new(0, 0, 0),
+            Position = vector2_new(0, 0),
+            Font = 0,
+		},
+	}
+    local fonts = {
+        [0] = Enum.Font.Code,
+        [1] = Enum.Font.Roboto,
+        [2] = Enum.Font.Arcade,
+        [3] = Enum.Font.Gotham,
+    }
+
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+                GUI.text.Visible = boolean
+            end,
+        },
+		Transparency =  {
+            type = 'number',
+            func = function(number)
+                GUI.text.TextTransparency = convertTransparency(number)
+            end,
+        },
+		Color =  {
+            type = 'Color3',
+            func = function(color)
+                GUI.text.TextColor3 = color
+            end,
+        },
+		ZIndex =  {
+            type = 'number',
+            func = function(number)
+                GUI.text.ZIndex = number;
+            end,
+        },
+        Text = {
+            type = 'string',
+            func = function(string)
+                GUI.text.Text = string;
+                GUI.text.Size = udim2(GUI.text.TextBounds);
+            end,
+        },
+        Size = {
+            type = 'number',
+            func = function(number)
+                GUI.text.TextSize = number;
+            end,
+        },
+        Center = {
+            type = 'boolean',
+            func = function(boolean)
+                if (boolean) then
+                    GUI.text.AnchorPoint = vector2_new(0.5, 0);
+                else
+                    GUI.text.AnchorPoint = vector2_new(0, 0);
+                end
+            end,
+        },
+        Outline = {
+            type = 'boolean',
+            func = function(boolean)
+                if (boolean) then
+                    GUI.text.TextStrokeTransparency = 0;
+                else
+                    GUI.text.TextStrokeTransparency = 1;
+                end
+            end,
+        },
+        OutlineColor = {
+            type = 'Color3',
+            func = function(color)
+                GUI.text.Color3 = color;
+            end,
+        },
+        Position = {
+            type = 'Vector2',
+            func = function(vector2)
+                GUI.text.Position = convertVector2(vector2);
+            end,
+        },
+        Font = {
+            type = 'number',
+            func = function(number)
+                if (fonts[number]) then
+                    GUI.text.Font = fonts[number];
+                end
+            end,
+        },
+	}
+    GUI.text = createInstance('TextLabel', {Visible = false, BackgroundTransparency = 1, TextSize = 18, ZIndex = 0, BorderSizePixel = 0, Font = Enum.Font.Code})
+    GUI.text.Size = udim2(GUI.text.TextBounds)
+    local remove = function()
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy()
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed')
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'TextBounds') then
+                return GUI.text.TextBounds;
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Text')
+        end
+        error('Drawing is destroyed')
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index]
+            if (values) then
+                propertyTypeError(value, index, values.type)
+                GUI.settings[index] = value
+                values.func(value)
+                return
+            end
+            propertyError(index, 'Text')
+        end
+        error('Drawing is destroyed')
+	end
+	local text = setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	})
+	return text;
+end
+local function CreateImage()
+    local active = true;
+    local GUI = {
+		settings = {
+			Visible = false,
+			Transparency = 1,
+			Color = color3_new(0, 0, 0),
+			ZIndex = 0,
+            Data = '',
+            Size = vector2_new(0, 0),
+            Position = vector2_new(0, 0),
+            Rounding = 0,
+		},
+	}
+
+	local change; change = {
+		Visible = {
+            type = 'boolean',
+            func = function(boolean)
+                GUI.image.Visible = boolean
+            end,
+        },
+		Transparency =  {
+            type = 'number',
+            func = function(number)
+                GUI.image.ImageTransparency = convertTransparency(number)
+            end,
+        },
+		Color =  {
+            type = 'Color3',
+            func = function(color)
+                GUI.image.BackgroundColor3 = color
+            end,
+        },
+		ZIndex =  {
+            type = 'number',
+            func = function(number)
+                GUI.image.ZIndex = number;
+            end,
+        },
+        Data = {
+            type = 'string',
+            func = function(string)
+                writefile('temp.ms', string)
+                GUI.image.Image = getcustomasset('temp.ms');
+                delfile('temp.ms')
+            end,
+        },
+        Size = {
+            type = 'Vector2',
+            func = function(vector2)
+                GUI.image.Size = convertVector2(vector2);
+            end,
+        },
+        Position = {
+            type = 'Vector2',
+            func = function(vector2)
+                GUI.image.Position = convertVector2(vector2);
+            end,
+        },
+        Rounding = {
+            type = 'number',
+            func = function(number)
+                GUI.corner.CornerRadius = udim_new(0, number)
+            end,
+        },
+        
+	}
+    GUI.image = createInstance('ImageLabel', {Visible = false, BackgroundTransparency = 1, ZIndex = 0, BorderSizePixel = 0})
+    GUI.corner = createInstance('UICorner', {CornerRadius = udim_new(0, 0)}, GUI.image)
+
+    local remove = function()
+        if (not active) then
+            active = false;
+            for _, instance in GUI do
+                if (type(instance) ~= 'table') then
+                    instance:Destroy();
+                end
+            end
+            return;
+        end
+        error('Drawing is destroyed');
+	end
+	local index = function(table, index)
+        if (not active) then
+            if (GUI.settings[index]) then
+                return GUI.settings[index];
+            elseif (index == 'Remove' or index == 'Destroy') then
+                return remove;
+            end
+            error(tos(index)..' is not a valid member of Image')
+        end
+        error('Drawing is destroyed');
+	end
+	local newindex = function(table, index, value)
+        if (not active) then
+            local values = change[index];
+            if (values) then
+                propertyTypeError(value, index, values.type);
+                GUI.settings[index] = value;
+                values.func(value);
+                return;
+            end
+            propertyError(index, 'Image');
+        end
+        error('Drawing is destroyed');
+	end
+	return setmetatable({}, {
+		__index = index,
+		__newindex = newindex,
+	});
+end
+
+local functions = {
+	Square = CreateSquare,
+    Circle = CreateCircle,
+    Line = CreateLine,
+    Quad = CreateQuad,
+    Triangle = CreateTriangle,
+    Text = CreateText,
+    Image = CreateImage,
+}
+Drawing.new = function(_type)
+	if (functions[_type]) then
+		return functions[_type]();
+	end
+    error('Drawing type '..tos(_type)..' not Supported');
+end
+Drawing.Clear = function()
+    local drawinglibrary = coregui:FindFirstChild('ms_DrawingLibrary')
+    if (drawinglibrary) then
+        for _, drawing in drawinglibrary:GetChildren() do
+            drawing:Destroy();
+        end
+    end
+end
