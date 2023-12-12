@@ -121,7 +121,7 @@ local function CreateSquare()
                 else
                     GUI.left.Size = udim2(number, y)
                 end
-                change.Position(GUI.settings.Position)
+                change.Position.func(GUI.settings.Position)
             end,
         },
 		Size = {
@@ -136,7 +136,7 @@ local function CreateSquare()
                 else
                     GUI.left.Size = udim2(thickness, vector2.Y + thickness-1)
                 end
-                change.Position(GUI.settings.Position)
+                change.Position.func(GUI.settings.Position)
             end,
         },
 		Position = {
@@ -164,7 +164,7 @@ local function CreateSquare()
 	GUI.left = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(1, 100), ZIndex = 0, BorderSizePixel = 0})
 	GUI.top = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(100, 1), ZIndex = 0, BorderSizePixel = 0})
 	GUI.bottom = createInstance('Frame', {Visible = false, BackgroundTransparency = 0, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(100, 1), ZIndex = 0, BorderSizePixel = 0})
-	change.Position(GUI.settings.Position)
+	change.Position.func(GUI.settings.Position)
 
 	local remove = function()
         if (not active) then
@@ -282,7 +282,7 @@ local function CreateCircle()
 	GUI.frame = createInstance('Frame', {Visible = false, BackgroundTransparency = 1, BackgroundColor3 = color3_new(0, 0, 0), Size = udim2(20, 20), ZIndex = 0, AnchorPoint = vector2_new(0.5, 0.5), BorderSizePixel = 0})
     GUI.uicorner = createInstance('UICorner', {CornerRadius = udim_new(0.5, 0)}, GUI.frame)
     GUI.uistroke = createInstance('UIStroke', {Color = color3_new(0, 0, 0), Thickness = 1}, GUI.frame)
-	change.Position(GUI.settings.Position)
+	change.Position.func(GUI.settings.Position)
 
 	local remove = function()
         if (not active) then
