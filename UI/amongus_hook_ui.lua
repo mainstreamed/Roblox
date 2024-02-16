@@ -47,7 +47,6 @@ local library = {
     },
     alldrawings = {}, -- all drawings get stored in here
 }
-
 -- library functions
 do
 	-- add arrow input function
@@ -62,7 +61,6 @@ do
         library = nil;
     end
 end
-
 -- initialise
 do
 	-- detecting inputs (reducing connections)
@@ -106,7 +104,6 @@ do
 		ti.tabs[ti.selected]:close();
 	end)
 end
-
 -- user functions
 do
 	function library:AddTab(text)
