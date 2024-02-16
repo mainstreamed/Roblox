@@ -47,6 +47,7 @@ local library = {
     },
     alldrawings = {}, -- all drawings get stored in here
 }
+getgenv().flags = {}
 -- library functions
 do
 	-- add arrow input function
@@ -218,9 +219,22 @@ do
 				local toggle = {
 					hovered = false,
 					enabled = prop.default or false,
+					flag = {
+						value = prop.default or false,
+					},
 					drawings = {},
 				}
-
+				-- flags
+				do
+					toggle.flag.Changed = function() end
+					if (prop.flag) then
+						function toggle.flag:OnChanged(func)
+							toggle.flag.Changed = func;
+							func()
+						end
+						flags[prop.flag] = toggle.flag
+					end
+				end
 				-- drawings
 				do
 					toggle.drawings.base = createDrawing('Square', {
@@ -277,8 +291,23 @@ do
 					hovered = false,
 					text = prop.text or 'Slider',
 					value = prop.default or prop.min,
+					suffix = prop.suffix or '',
+					flag = {
+						value = prop.default or prop.min,
+					},
 					drawings = {},
 				}
+				-- flags
+				do
+					slider.flag.Changed = function() end
+					if (prop.flag) then
+						function slider.flag:OnChanged(func)
+							slider.flag.Changed = func;
+							func()
+						end
+						flags[prop.flag] = slider.flag
+					end
+				end
 				-- drawings
 				do
 					slider.drawings.base = createDrawing('Square', {
@@ -293,13 +322,12 @@ do
 						Font = 2,
 						Position = slider.drawings.base.Position,
 						Size = 13,
-						Text = slider.text..': '..slider.value,
 					}, {library.alldrawings})
 				end
 				--functions 
 				do
 					slider.updatetext = function()
-						slider.drawings.textmain.Text = slider..': '..slider.value;
+						slider.drawings.textmain.Text = slider..': '..slider.value..slider.suffix;
 					end
 					slider.increase = function()
 						if (not slider.hovered) then
@@ -324,6 +352,8 @@ do
 				end
 				-- functionality / cleanup
 				do
+					slider.updatetext()
+
 					library:dInput('Right', slider.increase);
 					library:dInput('Left', slider.decrease);
 
