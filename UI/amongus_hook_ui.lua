@@ -83,7 +83,7 @@ do
 			return;
 		end
 		for _, func in funcs do
-			func();
+			task.spawn(func);
 		end
 	end)
 	-- inputs for going up and down the tabs
@@ -116,6 +116,7 @@ do
 	library:dInput('Return', function()
 		local ti = library.tabinfo;
 		if (library.active and not ti.active) then
+			task.wait()
 			ti.tabs[ti.selected]:open();
 		end
 	end)
