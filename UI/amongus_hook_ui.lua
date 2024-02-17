@@ -8,11 +8,12 @@ local color3_fromrgb = Color3.fromRGB;
 local cframe_new = CFrame.new;
 local instance_new = Instance.new;
 local math_huge = math.huge;
+local math_max = math.max;
 local table_insert = table.insert;
 
 local userinputservice = getservice(game, 'UserInputService');
 local camera = workspace.CurrentCamera
-local menuwidth = camera.ViewportSize.X / 18
+local menuwidth = math_max(camera.ViewportSize.X / 18, 120)
 
 local function createDrawing(type, properties, add)
 	local drawing = drawing_new(type);
