@@ -31,7 +31,7 @@ end
 
 -- main library
 local library = {
-    inputs = { -- all functions used for inputs (to save connections)
+	inputs = { -- all functions used for inputs (to save connections)
 		Up = {},
 		Down = {},
 		Right = {},
@@ -39,13 +39,13 @@ local library = {
 		Return = {},
 		Backspace = {},
 	},
-    tabinfo = { -- all tab data here
-        active = false,
-        amount = 0,
-        selected = 1,
-        tabs = {},
-    },
-    alldrawings = {}, -- all drawings get stored in here
+	tabinfo = { -- all tab data here
+		active = false,
+		amount = 0,
+		selected = 1,
+		tabs = {},
+	},
+	alldrawings = {}, -- all drawings get stored in here
 }
 getgenv().flags = {}
 -- library functions
@@ -54,40 +54,40 @@ do
 	function library:dInput(key, func)
 		table_insert(library.inputs[key], func);
 	end
-    function library:Unload()
-        for _, value in library.alldrawings do
-            value:Remove();
-        end
-        library.mainconnection:Disconect();
-        library = nil;
-    end
+	function library:Unload()
+		for _, value in library.alldrawings do
+			value:Remove();
+		end
+		library.mainconnection:Disconect();
+		library = nil;
+	end
 end
 -- initialise
 do
 	-- detecting inputs (reducing connections)
-    library.mainconnection = userinputservice.InputBegan:Connect(function(key)
-        local funcs = library.inputs[key.KeyCode.Name];
-        if (funcs) then
-            for _, func in funcs do
-                func();
-            end
-        end
-    end)
+	library.mainconnection = userinputservice.InputBegan:Connect(function(key)
+		local funcs = library.inputs[key.KeyCode.Name];
+		if (funcs) then
+			for _, func in funcs do
+				func();
+			end
+		end
+	end)
 	-- inputs for going up and down the tabs
 	library:dInput('Up', function()
 		local ti = library.tabinfo;
 		if (not ti.active and ti.selected > 1) then
 			ti.tabs[ti.selected]:hovered();
-            ti.selected-=1;
-            ti.tabs[ti.selected]:hovered();
+			ti.selected-=1;
+			ti.tabs[ti.selected]:hovered();
 		end
 	end)
 	library:dInput('Down', function()
 		local ti = library.tabinfo;
 		if not (not ti.active and ti.selected > 1) then
 			ti.tabs[ti.selected]:hovered();
-            ti.selected+=1;
-            ti.tabs[ti.selected]:hovered();
+			ti.selected+=1;
+			ti.tabs[ti.selected]:hovered();
 		end
 	end)
 	library:dInput('Return', function()
@@ -173,11 +173,11 @@ do
 				library.tabinfo.active = true;
 				tab.opened = true;
 				tab.drawings.arrow.Text = '>';
-                for _, option in tab.options do
-                    for _, drawing in option.drawings do
-                        drawing.Visible = true;
-                    end
-                end
+				for _, option in tab.options do
+					for _, drawing in option.drawings do
+						drawing.Visible = true;
+					end
+				end
 			end
 			function tab:close()
 				if (not tab.opened) then
@@ -186,11 +186,11 @@ do
 				library.tabinfo.active = false;
 				tab.opened = false;
 				tab.drawings.arrow.Text = '<';
-                for _, option in tab.options do
-                    for _, drawing in option.drawings do
-                        drawing.Visible = false;
-                    end
-                end
+				for _, option in tab.options do
+					for _, drawing in option.drawings do
+						drawing.Visible = false;
+					end
+				end
 			end
 			tab.navUp = function()
 				if (tab.opened and tab.selected < tab.options.amount) then
@@ -255,7 +255,7 @@ do
 				--functions 
 				do
 					toggle.toggle = function(boolean)
-						if (not toggled.hovered) then
+						if (not toggle.hovered) then
 							return;
 						end
 						if (boolean == nil) then
@@ -358,8 +358,8 @@ do
 					library:dInput('Left', slider.decrease);
 
 					if (tab.options.amount == 1) then
-						toggle.hovered = true;
-						toggle.drawings.base.Color = color3_fromrgb(255, 0, 0);
+						slider.hovered = true;
+						slider.drawings.base.Color = color3_fromrgb(255, 0, 0);
 					end
 				end
 
@@ -369,8 +369,8 @@ do
 		-- functionality / cleanup
 		do
 			tab:hovered(hovered);
-			dInput('Up', tab.navUp);
-			dInput('Down', tab.navDown);
+			library.dInput('Up', tab.navUp);
+			library.dInput('Down', tab.navDown);
 		end
 		table_insert(library.tabinfo.tabs, tab);
 	end
