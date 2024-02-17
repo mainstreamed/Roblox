@@ -31,6 +31,8 @@ local function createDrawing(type, properties, add)
 end
 
 -- main library
+
+local admin = {}; -- add usernames!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 local library = {
 	inputs = { -- all functions used for inputs (to save connections)
 		Up = {},
@@ -46,6 +48,7 @@ local library = {
 		selected = 1,
 		tabs = {},
 	},
+	admins = admin,
 	active = true,
 	alldrawings = {}, -- all drawings get stored in here
 }
