@@ -45,6 +45,7 @@ local library = {
 		selected = 1,
 		tabs = {},
 	},
+	active = true,
 	alldrawings = {}, -- all drawings get stored in here
 }
 getgenv().flags = {}
@@ -61,48 +62,68 @@ do
 		library.mainconnection:Disconect();
 		library = nil;
 	end
+	function library:Toggle(boolean)
+		if (boolean == nil) then
+			boolean = not library.active
+		end
+		library.active = boolean;
+		for _, tab in library.tabinfo.tabs do
+			for _, drawing in tab.drawings do
+				drawing.Visible = boolean;
+			end
+		end
+	end
 end
 -- initialise
 do
 	-- detecting inputs (reducing connections)
 	library.mainconnection = userinputservice.InputBegan:Connect(function(key)
 		local funcs = library.inputs[key.KeyCode.Name];
-		if (funcs) then
-			for _, func in funcs do
-				func();
-			end
+		if (not funcs) then
+			return;
+		end
+		for _, func in funcs do
+			func();
 		end
 	end)
 	-- inputs for going up and down the tabs
+	library:dInput('Right', function()
+		if (not library.active) then
+			library:Toggle(true);
+		end
+	end)
+	library:dInput('Left', function()
+		if (not library.tabinfo.active and library.active) then
+			library:Toggle(false);
+		end
+	end)
 	library:dInput('Up', function()
 		local ti = library.tabinfo;
-		if (not ti.active and ti.selected > 1) then
-			ti.tabs[ti.selected]:hovered();
+		if (library.active and not ti.active and ti.selected > 1) then
+			ti.tabs[ti.selected]:hovered_();
 			ti.selected-=1;
-			ti.tabs[ti.selected]:hovered();
+			ti.tabs[ti.selected]:hovered_();
 		end
 	end)
 	library:dInput('Down', function()
 		local ti = library.tabinfo;
-		if not (not ti.active and ti.selected > 1) then
-			ti.tabs[ti.selected]:hovered();
+		if (library.active and not ti.active and ti.selected < ti.amount) then
+			ti.tabs[ti.selected]:hovered_();
 			ti.selected+=1;
-			ti.tabs[ti.selected]:hovered();
+			ti.tabs[ti.selected]:hovered_();
 		end
 	end)
 	library:dInput('Return', function()
 		local ti = library.tabinfo;
-		if (ti.active) then
-			return;
+		if (library.active and not ti.active) then
+			ti.tabs[ti.selected]:open();
 		end
-		ti.tabs[ti.selected]:open();
 	end)
 	library:dInput('Backspace', function()
 		local ti = library.tabinfo;
-		if (not ti.active) then
-			return;
+		if (library.active and ti.active) then
+			ti.tabs[ti.selected]:close();
 		end
-		ti.tabs[ti.selected]:close();
 	end)
 end
 -- user functions
@@ -155,9 +176,9 @@ do
 		end
 		-- functions
 		do
-			function tab:hovered(boolean)
+			function tab:hovered_(boolean)
 				if (boolean == nil) then
-					boolean = not tab.opened;
+					boolean = not tab.hovered;
 				end
 				tab.hovered = boolean;
 				if (boolean) then
@@ -173,7 +194,7 @@ do
 				library.tabinfo.active = true;
 				tab.opened = true;
 				tab.drawings.arrow.Text = '>';
-				for _, option in tab.options do
+				for _, option in tab.options.stored do
 					for _, drawing in option.drawings do
 						drawing.Visible = true;
 					end
@@ -186,14 +207,14 @@ do
 				library.tabinfo.active = false;
 				tab.opened = false;
 				tab.drawings.arrow.Text = '<';
-				for _, option in tab.options do
+				for _, option in tab.options.stored do
 					for _, drawing in option.drawings do
 						drawing.Visible = false;
 					end
 				end
 			end
 			tab.navUp = function()
-				if (tab.opened and tab.selected < tab.options.amount) then
+				if (tab.opened and tab.selected > 1) then
 					local current = tab.options.stored[tab.selected];
 					current.hovered = false;
 					current.drawings.base.Color = color3_fromrgb(0, 0, 0);
@@ -204,7 +225,7 @@ do
 				end
 			end
 			tab.navDown = function()
-				if (tab.opened and tab.selected > 1) then
+				if (tab.opened and tab.selected < tab.options.amount) then
 					local current = tab.options.stored[tab.selected];
 					current.hovered = false;
 					current.drawings.base.Color = color3_fromrgb(0, 0, 0);
@@ -245,7 +266,6 @@ do
 					}, {library.alldrawings})
 					toggle.drawings.text = createDrawing('Text', {
 						Color = color3_fromrgb(255, 255, 255),
-						Visible = true,
 						Font = 2,
 						Position = toggle.drawings.base.Position,
 						Size = 13,
@@ -273,9 +293,9 @@ do
 				do
 					library:dInput('Return', toggle.toggle)
 					if (toggle.enabled) then
-						toggle.drawings.textmain.Color = color3_fromrgb(255, 255, 255); 
+						toggle.drawings.text.Color = color3_fromrgb(255, 255, 255); 
 					else
-						toggle.drawing.textmain.Color = color3_fromrgb(79, 79, 79);
+						toggle.drawings.text.Color = color3_fromrgb(79, 79, 79);
 					end
 					if (tab.options.amount == 1) then
 						toggle.hovered = true;
@@ -284,6 +304,7 @@ do
 
 				end
 				table_insert(tab.options.stored, toggle)
+				return toggle;
 			end
 			function tab:AddSlider(prop)
 				tab.options.amount += 1
@@ -318,7 +339,6 @@ do
 					}, {library.alldrawings})
 					slider.drawings.text = createDrawing('Text', {
 						Color = color3_fromrgb(255, 255, 255),
-						Visible = true,
 						Font = 2,
 						Position = slider.drawings.base.Position,
 						Size = 13,
@@ -327,7 +347,7 @@ do
 				--functions 
 				do
 					slider.updatetext = function()
-						slider.drawings.textmain.Text = slider..': '..slider.value..slider.suffix;
+						slider.drawings.text.Text = slider.text..': '..slider.value..slider.suffix;
 					end
 					slider.increase = function()
 						if (not slider.hovered) then
@@ -364,15 +384,17 @@ do
 				end
 
 				table_insert(tab.options.stored, slider)
+				return slider;
 			end
 		end
 		-- functionality / cleanup
 		do
-			tab:hovered(hovered);
+			tab:hovered_(hovered);
 			library:dInput('Up', tab.navUp);
 			library:dInput('Down', tab.navDown);
 		end
 		table_insert(library.tabinfo.tabs, tab);
+		return tab;
 	end
 end
 
