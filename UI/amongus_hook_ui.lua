@@ -369,8 +369,8 @@ do
 		-- functionality / cleanup
 		do
 			tab:hovered(hovered);
-			library.dInput('Up', tab.navUp);
-			library.dInput('Down', tab.navDown);
+			library:dInput('Up', tab.navUp);
+			library:dInput('Down', tab.navDown);
 		end
 		table_insert(library.tabinfo.tabs, tab);
 	end
