@@ -1,6 +1,7 @@
 local setrender = setrenderproperty or function(drawing, index, value) drawing[index] = value end;
 local getrender = getrenderproperty or function(drawing, index) return drawing[index] end;
 local drawing_new = Drawing.new;
+setreadonly(getgenv().Drawing, false)
 getgenv().Drawing.new = function(object)
      local drawing = drawing_new(object);
      return setmetatable({}, {
@@ -12,3 +13,4 @@ getgenv().Drawing.new = function(object)
           end,
      });
 end
+setreadonly(getgenv().Drawing, true)
